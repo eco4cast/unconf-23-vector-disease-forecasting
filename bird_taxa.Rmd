@@ -1,0 +1,109 @@
+---
+title: "Bird Diversity"
+author: "Ayanna St. Rose"
+date: "2023-06-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Load all Libraries
+```{r}
+library(neonUtilities)
+library(dplyr)
+library(tidyverse)
+library(neonUtilities)
+library(multcomp)
+library(janitor)
+library(vegan)
+```
+#Source bird data from NEON data portal (Breeding landbird point counts DP1.10003.001)
+```{r}
+bird_data = loadByProduct(dpID = "DP1.10003.001", 
+              site= c("BARR", "DSNY", "TOOL", "LAJA", "OAES", "WOOD", "NOGP", "TOOL", "DCFS", "JORN", "KONA", "BONA", "CLBJ", "DEJU", "GUAN", "HARV", "KONZ", "LENO", "MLBS","NIWO", "ONAQ", "ORNL", "OSBS", "SCBI", "SJER", "SOAP", "TALL", "UKFS", "UNDE", "WREF","YELL", "ABBY", "BART", "BLAN", "DELA",  "GRSM", "HEAL", "JERC", "MOAB", "TEAK", "PUUM", "SERC", "RMNP","STEI", "TREE"),
+              startdate = "2013-01", enddate = "2022-12",
+              check.size = FALSE)
+```
+#Aggregate site data
+#Note that some years does not have data
+#Extract expert taxonomic ID from data list
+#Download brd_countdata table and bird_fielddata (metadata) from list of beetle field data
+```{r}
+bird_taxa = bird_data$brd_countdata
+
+bird_fieldData = bird_data$brd_perpoint
+```
+
+#Merge taxonomic and field data by namedLocation
+```{r}
+bird_full_data = merge(bird_taxa, bird_fieldData,
+                   by = c("eventID", "pointID", "uid", "plotID", "siteID", "domainID", "release",
+                          "plotType", "startDate", "namedLocation", "publicationDate") ,
+                   all = TRUE, check.duplicates = FALSE)
+```
+
+#Remove rows where taxon ID says NA
+#This will have the same contents as the bird taxa dataframe,
+#with added columns from field table
+```{r}
+bird_full_data = bird_full_data %>% drop_na(taxonID)
+```
+
+#Write bird presence data that includes taxonomic information and field information to csv
+```{r}
+write.csv(bird_full_data, "bird_full_data.csv", row.names = FALSE)
+```
+
+#Adjust start date format to year
+```{r}
+#Change format of collect dates to years
+bird_full_data$startDate = data.frame(format(as.Date(bird_full_data$startDate, format = "%Y-%m-%d"), "%Y"))
+```
+
+###Goal:
+#####Run species richness for each site for each year
+#####Create data frame with different species for each site
+#####Pseudoabundance is how many times the species is repeated (run for each site)
+#####Count number of times a unique species occurs in each site
+```{r}
+#bird occurrence only sorted by siteID
+#Quantify bird occurrence
+#Group by specific epithet and site ID
+bird_occ = as.matrix(bird_full_data[,c(5,9,14)])
+bird_occ = data.frame(bird_occ)
+colnames(bird_occ)[2] <- "year"
+
+#Grouo by site then by specific epithet and year
+bird_occ = bird_occ %>%
+  tabyl(year, taxonID, siteID, sort = TRUE, head = TRUE)
+```
+
+#Prep the data for abundance
+#Create for loop to calculate abundance in each site by year
+#Show species distribution for each species for each site
+```{r}
+for (i in seq_along(bird_occ)){
+  row.names(bird_occ[[i]]) <- (bird_occ[[i]][,1]) #Place row as header of column
+  bird_occ[[i]] = bird_occ[[i]][,-c(1)] #Place delete year as a column
+  bird_occ[[i]]$abundance = rowSums(bird_occ[[i]]) #get abundance by getting the number of species with 
+}
+
+abby = bird_occ$ABBY
+```
+
+#Pull out the richness column for each site
+```{r}
+bird_abun = lapply(bird_occ, function(x) x[,ncol(x)])
+
+```
+
+```{r}
+bird = list_rbind(bird_occ, names_to = 'siteID')
+bird = bird[, c(1, 570)]
+```
+
+```{r}
+write.csv(bird, "bird_abundance.csv", row.names = FALSE)
+```

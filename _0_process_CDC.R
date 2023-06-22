@@ -13,4 +13,4 @@ df_cases_by_county <- map_dfr(L_files,function(file_i){
     mutate(County = as.numeric(County))
 })
 
-save(df_west_nile_by_county)
+save(df_cases_by_county,file="./DATA/PROCESSED/CDC_WNV_cases_by_county.Rdata")

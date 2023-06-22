@@ -1,0 +1,73 @@
+---
+title: "0 - data wrangling narrative"
+author: "ER Deyle; Kayode; Janet O."
+date: "2023-06-22"
+output: html_document
+---
+
+This narrative describes the initial processing steps taken to fuse CDC data on human infections and NEON data on mosquito populations into a single data environment.
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(sf)
+```
+
+File names for outputs
+
+```{r}
+fname_cases_by_county <- "./DATA/PROCESSED/CDC_WNV_cases_by_county.Rdata"
+fname_mos_by_site <- "./DATA/PROCESSED/mos_total_counts.Rdata"
+```
+
+## Pulling data
+
+NEON metadata gives us locations for mosquito etc.
+
+```{r}
+df_NEON_metadata_FULL <- read_csv("https://raw.githubusercontent.com/eco4cast/neon4cast-targets/main/NEON_Field_Site_Metadata_20220412.csv")
+df_NEON_metadata <- df_NEON_metadata_FULL %>%
+  select(field_site_id,field_site_county,field_site_state,field_latitude,field_longitude) %>%
+  mutate(FullGeoName = paste0(field_site_state,", ",field_site_county))
+```
+
+## CDC Data
+
+```{r}
+if(file.exists(fname_cases_by_county)){
+  load(fname_cases_by_county)
+}else{
+  source("_0_process_CDC.R")
+}
+```
+
+## NEON mosquito abundance data
+
+```{r}
+if(file.exists(fname_mos_by_site)){
+  load(fname_mos_by_site)
+}else{
+  source("_0_pull_trap_mosquito.R")
+}
+```
+
+
+## Use NEON metadata to make an overlap; negotiating county codes
+
+```{r pressure, echo=FALSE}
+df_total_counts_by_county <- df_total_counts_by_site %>%
+  left_join(df_NEON_metadata,by=c("siteID"="field_site_id")) %>%
+  select(FullGeoName,everything())
+
+
+df_cases_by_county <-  df_cases_by_county %>%
+  filter(FullGeoName %in% unique(df_total_counts_by_county$FullGeoName)) %>%
+  filter(Activity=="Human infections")
+
+# df_NEON_metadata
+# df_cases_by_county
+# df_NEON_metadata 
+
+save(df_total_counts_by_county,df_cases_by_county,file="./DATA/PROCESSED/merged")
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

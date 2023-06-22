@@ -3,8 +3,6 @@ library(neonstore)
 library(dplyr)
 library(lubridate)
 
-setwd("~/Library/CloudStorage/GoogleDrive-edeyle@bu.edu/My Drive/GALILE(c)O/Projects/Vector Born Disease Dynamics")
-
 if(!file.exists("./DATA/PROCESSED/mos_individualCount_all_sites.Rdata")){
   df <-  neonstore:::neon_data(product = "DP1.10043.001",
                                start_date = "2014-01-01", 
@@ -40,27 +38,29 @@ ds_expert <- duckdbfs::open_dataset(urls_expert,
   
 v_scientific_name <- c(`Culex tarsalis`="CULTAR",`Culex pipiens`="CULPIP")
 
+# NEED FIX: this is getting rid of true 0s.
 df_expert_Culex <- ds_expert %>%
   filter(sex=="F") %>%
   group_by(subsampleID) %>%
-  filter(genus=="Culex") %>%
+  # filter(genus=="Culex") %>%
   collect()
 
 
 df_expert_summary <-  df_expert_Culex %>%
-  summarise(Culex_all = sum(individualCount * (genus=="Culex"),na.rm=T),
-            Culex_tarsalis = sum(individualCount * (taxonID=="CULTAR"),na.rm=T),
-            Culex_pipiens = sum(individualCount * (taxonID=="CULPIP"),na.rm=T))
+  summarise(mos_all = sum(individualCount),na.rm=T,
+            mos_Culex_all = sum(individualCount * (genus=="Culex"),na.rm=T),
+            mos_Culex_tarsalis = sum(individualCount * (taxonID=="CULTAR"),na.rm=T),
+            mos_Culex_pipiens = sum(individualCount * (taxonID=="CULPIP"),na.rm=T))
 
 df_total_counts_by_plot <- right_join(df_samp,df_expert_summary,by="subsampleID") %>%
-  mutate(across(starts_with("Culex"), ~./proportionIdentified)) %>%
+  mutate(across(starts_with("mos"), ~./proportionIdentified)) %>%
+  filter(proportionIdentified>0) %>% # proportionIdentified = 0 for a few measurements but makes no sense.
   select(-proportionIdentified)
   
-
 df_total_counts_by_site <- df_total_counts_by_plot %>%
   mutate(Month = month(collectDate),Year = year(collectDate)) %>%
   group_by(siteID,Year,Month) %>%
-  summarise(across(starts_with("Culex"),mean),.groups = "keep") %>% # using "mean" to account for changing sampling effoort
+  summarise(across(starts_with("mos"),mean),.groups = "keep") %>% # using "mean" to account for changing sampling effoort
   select(siteID,Year,Month,everything())
 
 save(df,

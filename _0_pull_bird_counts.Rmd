@@ -67,6 +67,7 @@ bird_full_data$startDate = data.frame(format(as.Date(bird_full_data$startDate, f
 #####Create data frame with different species for each site
 #####Pseudoabundance is how many times the species is repeated (run for each site)
 #####Count number of times a unique species occurs in each site
+
 ```{r}
 #bird occurrence only sorted by siteID
 #Quantify bird occurrence

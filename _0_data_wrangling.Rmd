@@ -61,13 +61,17 @@ df_total_counts_by_county <- df_total_counts_by_site %>%
 
 df_cases_by_county <-  df_cases_by_county %>%
   filter(FullGeoName %in% unique(df_total_counts_by_county$FullGeoName)) %>%
-  filter(Activity=="Human infections")
+  filter(Activity=="Human infections") %>%
+  filter(Year >= 2014) %>%
+  select(FullGeoName,Year,`Reported human cases`,`Neuroinvasive disease cases`) %>%
+  complete(FullGeoName,Year,fill=list("Reported human cases"=0,"Neuroinvasive disease cases"=0))
+
 
 # df_NEON_metadata
 # df_cases_by_county
 # df_NEON_metadata 
 
-save(df_total_counts_by_county,df_cases_by_county,file="./DATA/PROCESSED/merged")
+save(df_total_counts_by_county,df_cases_by_county,file="./DATA/PROCESSED/_0_merged_CDC_NEON.Rdata")
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

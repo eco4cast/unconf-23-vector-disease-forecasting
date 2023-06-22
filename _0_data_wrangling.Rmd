@@ -42,6 +42,13 @@ if(file.exists(fname_cases_by_county)){
 
 ## NEON mosquito abundance data
 
+### General choices
+
+ - Taxonomic aggregation: WNV is principally transmitted by mosquitos within the genus Culex. Additionally, Culex tarsalis and Culex pipiens are of particular interest. [Citation: https://doi.org/10.3390/v5092079].
+ - Spatial aggregation: We are interested in matching these NEON data to CDC cases at the county level, so we simply sum counts for each SiteID, month, and year.
+
+### Call the script
+
 ```{r}
 if(file.exists(fname_mos_by_site)){
   load(fname_mos_by_site)
@@ -50,6 +57,13 @@ if(file.exists(fname_mos_by_site)){
 }
 ```
 
+### Additional thoughts
+
+Aggregating to the site may be a missed opportunity to better match plot types within the NEON site to the environmental characteristics of the wider county.
+
+Have not accounted for changes to sample intensity within a NEON site.
+
+The aggregation in time to the month level may not be very useful; this generally only gives 1-3 months within a Site and year.
 
 ## Use NEON metadata to make an overlap; negotiating county codes
 
@@ -72,6 +86,8 @@ df_cases_by_county <-  df_cases_by_county %>%
 # df_NEON_metadata 
 
 save(df_total_counts_by_county,df_cases_by_county,file="./DATA/PROCESSED/_0_merged_CDC_NEON.Rdata")
+write_csv(df_total_counts_by_county,file="./DATA/PROCESSED/_0_merged_NEON_export.csv")
+write_csv(df_cases_by_county,file="./DATA/PROCESSED/_0_merged_CDC_export.csv")
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

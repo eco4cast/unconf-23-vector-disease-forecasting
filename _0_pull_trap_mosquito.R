@@ -60,7 +60,7 @@ df_total_counts_by_plot <- right_join(df_samp,df_expert_summary,by="subsampleID"
 df_total_counts_by_site <- df_total_counts_by_plot %>%
   mutate(Month = month(collectDate),Year = year(collectDate)) %>%
   group_by(siteID,Year,Month) %>%
-  summarise(across(starts_with("Culex"),sum),.groups = "keep") %>%
+  summarise(across(starts_with("Culex"),mean),.groups = "keep") %>% # using "mean" to account for changing sampling effoort
   select(siteID,Year,Month,everything())
 
 save(df,
